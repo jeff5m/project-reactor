@@ -170,6 +170,29 @@ class OperatorsTest {
     }
 
     @Test
+    void concatOperatorError() {
+        Flux<String> flux1 = Flux.just("a", "b")
+                .map(s -> {
+                    if (s.equals("b")) {
+                        throw new IllegalArgumentException();
+                    }
+                    return s;
+                });
+
+        Flux<String> flux2 = Flux.just("c", "d");
+
+        Flux<String> concatFlux = Flux.concatDelayError(flux1, flux2)
+                .log();
+
+        StepVerifier
+                .create(concatFlux)
+                .expectSubscription()
+                .expectNext("a", "c", "d")
+                .expectError()
+                .verify();
+    }
+
+    @Test
     void concatWithOperator() {
         Flux<String> flux1 = Flux.just("a", "b");
         Flux<String> flux2 = Flux.just("c", "d");
@@ -238,4 +261,48 @@ class OperatorsTest {
                 .expectComplete()
                 .verify();
     }
+
+    @Test
+    void mergeSequentialOperator() {
+        Flux<String> flux1 = Flux.just("a", "b").delayElements(Duration.ofMillis(200));
+        Flux<String> flux2 = Flux.just("c", "d");
+
+        Flux<String> mergeSequentialFlux = Flux.mergeSequential(flux1, flux2, flux1)
+                .delayElements(Duration.ofMillis(200))
+                .log();
+
+        StepVerifier
+                .create(mergeSequentialFlux)
+                .expectSubscription()
+                .expectNext("a", "b", "c", "d", "a", "b")
+                .expectComplete()
+                .verify();
+    }
+
+    @Test
+    void mergeDelayErrorOperator() {
+        Flux<String> flux1 = Flux.just("a", "b")
+                .map(s -> {
+                    if (s.equals("b")) {
+                        throw new IllegalArgumentException();
+                    }
+                    return s;
+                }).doOnError(t -> log.error("We could do something with this"));
+
+        Flux<String> flux2 = Flux.just("c", "d");
+
+        Flux<String> mergeDelayError = Flux.mergeDelayError(1, flux1, flux2, flux1)
+                .log();
+
+        mergeDelayError.subscribe(log::info);
+
+        StepVerifier
+                .create(mergeDelayError)
+                .expectSubscription()
+                .expectNext("a", "c", "d", "a")
+                .expectError()
+                .verify();
+    }
+
+
 }
