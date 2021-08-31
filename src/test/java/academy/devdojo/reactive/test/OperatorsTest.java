@@ -1,10 +1,16 @@
 package academy.devdojo.reactive.test;
 
 import lombok.extern.slf4j.Slf4j;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
 import reactor.test.StepVerifier;
+
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.List;
 
 @Slf4j
 class OperatorsTest {
@@ -87,6 +93,25 @@ class OperatorsTest {
                 .create(flux)
                 .expectSubscription()
                 .expectNext(1, 2, 3, 4)
+                .verifyComplete();
+    }
+
+    @Test
+    void subscribeOnIo() throws InterruptedException {
+        Mono<List<String>> listMono = Mono.fromCallable(() -> Files.readAllLines(Path.of("text-file.txt")))
+                .log()
+                .subscribeOn(Schedulers.boundedElastic());
+
+//        listMono.subscribe(s -> log.info("{}", s));
+
+        StepVerifier
+                .create(listMono)
+                .expectSubscription()
+                .thenConsumeWhile(list -> {
+                    Assertions.assertFalse(list.isEmpty());
+                    log.info("Size {}", list.size());
+                    return true;
+                })
                 .verifyComplete();
     }
 }
