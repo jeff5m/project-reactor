@@ -10,6 +10,7 @@ import reactor.test.StepVerifier;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.Duration;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -146,6 +147,54 @@ class OperatorsTest {
         AtomicLong atomicLong = new AtomicLong();
         defer.subscribe(atomicLong::set);
         Assertions.assertTrue(atomicLong.get() > 0);
+    }
+
+    @Test
+    void concatOperator() {
+        Flux<String> flux1 = Flux.just("a", "b");
+        Flux<String> flux2 = Flux.just("c", "d");
+
+        Flux<String> concatFlux = Flux.concat(flux1, flux2)
+                .log();
+
+        StepVerifier
+                .create(concatFlux)
+                .expectSubscription()
+                .expectNext("a", "b", "c", "d")
+                .expectComplete()
+                .verify();
+    }
+
+    @Test
+    void concatWithOperator() {
+        Flux<String> flux1 = Flux.just("a", "b");
+        Flux<String> flux2 = Flux.just("c", "d");
+
+        Flux<String> concatFlux = flux1.concatWith(flux2)
+                .log();
+
+        StepVerifier
+                .create(concatFlux)
+                .expectSubscription()
+                .expectNext("a", "b", "c", "d")
+                .expectComplete()
+                .verify();
+    }
+
+    @Test
+    void combineLatestOperator() {
+        Flux<String> flux1 = Flux.just("a", "b");
+        Flux<String> flux2 = Flux.just("c", "d");
+
+        Flux<String> combineLatestFlux = Flux.combineLatest(flux1, flux2, (s1, s2) -> s1.toUpperCase() + s2.toUpperCase())
+                .log();
+
+        StepVerifier
+                .create(combineLatestFlux)
+                .expectSubscription()
+                .expectNext("BC", "BD")
+                .expectComplete()
+                .verify();
     }
 
     private Flux<Object> emptyFlux() {
