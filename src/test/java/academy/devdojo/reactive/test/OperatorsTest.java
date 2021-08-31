@@ -1,5 +1,9 @@
 package academy.devdojo.reactive.test;
 
+import lombok.AllArgsConstructor;
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
+import lombok.ToString;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -7,6 +11,7 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
 import reactor.test.StepVerifier;
+import reactor.util.function.Tuple3;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -336,6 +341,57 @@ class OperatorsTest {
 
     private Flux<String> findByName(String name) {
         return name.equals("A") ? Flux.just("Name A1", "Name A2").delayElements(Duration.ofMillis(100)) : Flux.just("Name B1", "Name B2");
+    }
+
+    @Test
+    void zipOperator() {
+        Flux<String> titleFlux = Flux.just("Attack on titans", "Tsubasa");
+        Flux<String> studioFlux = Flux.just("Zero-G", "TMS Entertainment");
+        Flux<Integer> episodesFlux = Flux.just(10, 40);
+
+        Flux<Anime> animeFlux = Flux.zip(titleFlux, studioFlux, episodesFlux)
+                .flatMap(tuple -> Flux.just(new Anime(tuple.getT1(), tuple.getT2(), tuple.getT3())));
+
+        animeFlux.subscribe(anime -> log.info(anime.toString()));
+
+        StepVerifier
+                .create(animeFlux)
+                .expectSubscription()
+                .expectNext(
+                        new Anime("Attack on titans", "Zero-G", 10),
+                        new Anime("Tsubasa", "TMS Entertainment", 40)
+                )
+                .verifyComplete();
+    }
+
+    @Test
+    void zipWithOperator() {
+        Flux<String> titleFlux = Flux.just("Attack on titans", "Tsubasa");
+        Flux<Integer> episodesFlux = Flux.just(10, 40);
+
+        Flux<Anime> animeFlux = titleFlux.zipWith(episodesFlux)
+                .flatMap(tuple -> Flux.just(new Anime(tuple.getT1(), null, tuple.getT2())));
+
+        animeFlux.subscribe(anime -> log.info(anime.toString()));
+
+        StepVerifier
+                .create(animeFlux)
+                .expectSubscription()
+                .expectNext(
+                        new Anime("Attack on titans", null, 10),
+                        new Anime("Tsubasa", null, 40)
+                )
+                .verifyComplete();
+    }
+
+    @AllArgsConstructor
+    @Getter
+    @ToString
+    @EqualsAndHashCode
+    private class Anime {
+        private String title;
+        private String studio;
+        private int episodes;
     }
 
 }
