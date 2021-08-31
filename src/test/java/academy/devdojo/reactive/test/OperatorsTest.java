@@ -170,7 +170,7 @@ class OperatorsTest {
     }
 
     @Test
-    void concatOperatorError() {
+    void concatErrorOperator() {
         Flux<String> flux1 = Flux.just("a", "b")
                 .map(s -> {
                     if (s.equals("b")) {
