@@ -201,4 +201,41 @@ class OperatorsTest {
                 .verify();
     }
 
+    @Test
+    void mergeOperator() {
+        Flux<String> flux1 = Flux.just("a", "b").delayElements(Duration.ofMillis(200));
+        Flux<String> flux2 = Flux.just("c", "d");
+
+        Flux<String> mergeFlux = Flux.merge(flux1, flux2)
+                .delayElements(Duration.ofMillis(200))
+                .log();
+
+//        mergeFlux.subscribe(log::info);
+
+//        Thread.sleep(1000);
+
+        StepVerifier
+                .create(mergeFlux)
+                .expectSubscription()
+                .expectNext("c", "d", "a", "b")
+                .expectComplete()
+                .verify();
+    }
+
+    @Test
+    void mergeWithOperator() {
+        Flux<String> flux1 = Flux.just("a", "b").delayElements(Duration.ofMillis(200));
+        Flux<String> flux2 = Flux.just("c", "d");
+
+        Flux<String> mergeWithFlux = flux1.mergeWith(flux2)
+                .delayElements(Duration.ofMillis(200))
+                .log();
+
+        StepVerifier
+                .create(mergeWithFlux)
+                .expectSubscription()
+                .expectNext("c", "d", "a", "b")
+                .expectComplete()
+                .verify();
+    }
 }
