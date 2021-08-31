@@ -131,6 +131,10 @@ class OperatorsTest {
                 .verify();
     }
 
+    private Flux<Object> emptyFlux() {
+        return Flux.empty();
+    }
+
     @Test
     void deferOperator() throws InterruptedException {
         Mono<Long> just = Mono.just(System.currentTimeMillis());
@@ -197,7 +201,4 @@ class OperatorsTest {
                 .verify();
     }
 
-    private Flux<Object> emptyFlux() {
-        return Flux.empty();
-    }
 }
